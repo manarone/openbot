@@ -95,7 +95,7 @@ export function createActivityStore(deps: ActivityStoreDeps) {
   });
   /** The steps of a turn. The host's progress lines are in its source English and read here in the user's language. */
   const stepsOfTurn = (turnId: string) =>
-    turnSteps(turnId, thinkingByTurn().get(turnId), deps.turnStepLog.steps(turnId), (text) =>
+    turnSteps(turnId, thinkingByTurn().get(turnId), deps.turnStepLog.events(turnId), (text) =>
       currentText().sourceText(text),
     );
   // The line keeps the steps of its turn while it leaves, so an open list does not empty first.

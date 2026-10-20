@@ -121,6 +121,7 @@ import { createChannelsController } from "../channels/channels-controller";
 import { globalSearchChannels } from "../channels/global-search-channels";
 import { createConnectorRegistry, createConnectorSet } from "../connectors/connector-registry";
 import { hostMessagingApi } from "../connectors/host-messaging-port";
+import { recordTurnStepEvent } from "../conversation/agent-steps";
 import { Conversation, createConversationController } from "../conversation/Conversation";
 import { clearStoredQueueEdit } from "../conversation/composer-draft";
 import { ConversationControllerProvider } from "../conversation/conversation-controller-context";
@@ -274,9 +275,6 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
         () => undefined,
       );
     },
-    // Host events start after the connection, so the controller below exists by then.
-    onTurnProgress: (turnId, detail, afterThinking) =>
-      controller.resources.turnStepLog.record(turnId, detail, afterThinking),
   });
   const notifications = createWebServerNotifications(props.accountId);
   // A stored queue edit holds message text of the account that opened it. Another account must not restore it.
@@ -965,6 +963,8 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
       if (event.type === "channels-changed" || event.type === "runtime-snapshot") void channels.refresh();
     }),
   );
+  // As on desktop: each event of the host keeps its place in the steps of its turn, for every agent.
+  onCleanup(workspace.onHostEvent((event) => recordTurnStepEvent(controller.resources.turnStepLog, event)));
   // As on desktop: an agent's error is the banner above its composer, and the newest one replaces
   // the last. An error with no agent is a toast, once per text in 30 seconds. The host redacts the
   // message before it sends it.
