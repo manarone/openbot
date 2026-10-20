@@ -38,7 +38,12 @@ import {
   messagePromptRequestKey,
   promptRequestKey,
 } from "./conversation-keys";
-import { mergeConversationPage, missingReplyOriginals, windowedSnapshotMessages } from "./conversation-merge";
+import {
+  mergeConversationPage,
+  mergeThinkingItems,
+  missingReplyOriginals,
+  windowedSnapshotMessages,
+} from "./conversation-merge";
 import { conversationPort } from "./conversation-port";
 import {
   decideAgentAutoRead,
@@ -632,9 +637,15 @@ const Conversation = createSimpleContext({
       updateConversation(page.agentId, (conversation) => {
         const currentMessages = conversation.messages;
         const currentById = new Map(currentMessages.map((message) => [message.id, message]));
-        const pageMessages = mapped.map((message) => {
-          const stored = currentById.get(message.id);
-          if (!stored) return createStoredMessage({ ...message, animate: false });
+        const pageMessages = mapped.map((pageMessage) => {
+          const stored = currentById.get(pageMessage.id);
+          if (!stored) return createStoredMessage({ ...pageMessage, animate: false });
+          // The steps of a turn read its thinking row, so a page with part of that turn's thinking
+          // adds to the row rather than replacing it.
+          const message =
+            merge !== "replace" && pageMessage.kind === "thinking" && stored.kind === "thinking"
+              ? { ...pageMessage, ...mergeThinkingItems(stored, pageMessage, merge) }
+              : pageMessage;
           if (!agentMessagesEqual(stored, message))
             updateStored(stored, stored.animate === undefined ? message : { ...message, animate: stored.animate });
           return stored;

@@ -41,6 +41,26 @@ export function mergeConversationPage<Message extends { id: string }>(
 }
 
 /**
+ * The thinking items of a turn from a loaded row and a page's row of the same turn. A turn with
+ * more thinking than one page holds is in two pages, and each page groups only its own items, so
+ * the page's row has part of them. The page's copy of an item wins, and `merge` puts the page's
+ * items before (`older`) or after (`latest`) the loaded ones.
+ */
+export function mergeThinkingItems(
+  loaded: { items?: string[] | undefined; itemIds?: string[] | undefined },
+  page: { items?: string[] | undefined; itemIds?: string[] | undefined },
+  merge: "older" | "latest",
+): { items: string[]; itemIds: string[] } {
+  const pageIds = new Set(page.itemIds ?? []);
+  const kept = (loaded.itemIds ?? []).flatMap((id, index) =>
+    pageIds.has(id) ? [] : [{ id, item: loaded.items?.[index] ?? "" }],
+  );
+  const fromPage = (page.itemIds ?? []).map((id, index) => ({ id, item: page.items?.[index] ?? "" }));
+  const joined = merge === "older" ? [...fromPage, ...kept] : [...kept, ...fromPage];
+  return { items: joined.map((entry) => entry.item), itemIds: joined.map((entry) => entry.id) };
+}
+
+/**
  * The originals that the replies of a host page quote and that the host no longer has. A page
  * sends each quoted original that is not on it among its references, so an original that is in
  * neither was deleted. A live message comes with no references, so only a page can tell.
