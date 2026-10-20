@@ -184,6 +184,11 @@ export function createWebWorkspace(
   hooks: {
     /** A new agent status of the connected host, such as the end of a provider sign-in. */
     onStatus?: (status: AgentStatus) => void;
+    /**
+     * A conversation read from the host starts. The returned function gets the page before the
+     * state shows it.
+     */
+    onConversationRead?: () => (page: ConversationPage) => void;
   } = {},
 ) {
   const [state, setState] = createStore<WebWorkspaceState>({
@@ -1084,9 +1089,11 @@ export function createWebWorkspace(
     if (older && !before) return;
     conversationReads.set(id, (conversationReads.get(id) ?? 0) + 1);
     try {
+      const placePage = hooks.onConversationRead?.();
       const page = await runtime.conversation(id, before);
       if (disposed || current !== generation) return;
       if (page.agentId !== id) throw new Error(currentText().t("webClient.error.otherConversation"));
+      placePage?.(page);
       setState((draft) => {
         const item = draft.conversations[id];
         if (!item) return;

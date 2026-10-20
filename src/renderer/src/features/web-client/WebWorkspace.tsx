@@ -121,7 +121,7 @@ import { createChannelsController } from "../channels/channels-controller";
 import { globalSearchChannels } from "../channels/global-search-channels";
 import { createConnectorRegistry, createConnectorSet } from "../connectors/connector-registry";
 import { hostMessagingApi } from "../connectors/host-messaging-port";
-import { recordTurnStepEvent } from "../conversation/agent-steps";
+import { recordTurnStepEvent, recordTurnStepPage } from "../conversation/agent-steps";
 import { Conversation, createConversationController } from "../conversation/Conversation";
 import { clearStoredQueueEdit } from "../conversation/composer-draft";
 import { ConversationControllerProvider } from "../conversation/conversation-controller-context";
@@ -274,6 +274,12 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
         (list) => showModels(request, list),
         () => undefined,
       );
+    },
+    // A page read places the thinking that the host sent no event for. Reads start after the
+    // connection, so the controller below exists by then.
+    onConversationRead: () => {
+      const readStart = controller.resources.turnStepLog.positions();
+      return (page) => recordTurnStepPage(controller.resources.turnStepLog, page, readStart);
     },
   });
   const notifications = createWebServerNotifications(props.accountId);
