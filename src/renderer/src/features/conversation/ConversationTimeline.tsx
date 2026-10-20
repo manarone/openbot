@@ -1,5 +1,5 @@
 import { chatVisualReply } from "@openbot/contracts/chat-visual";
-import type { ConversationMessageSender } from "@openbot/contracts/ipc";
+import { type ConversationMessageSender, ROUTINE_QUIET_ANSWER_ITEM_TYPE } from "@openbot/contracts/ipc";
 import type { ConversationUiBlock } from "@openbot/contracts/ui-blocks";
 import { Button } from "@openbot/ui";
 import type { AgentMessage, ChatActionMarkerModel } from "@openbot/ui/data";
@@ -177,6 +177,8 @@ export function ConversationTimeline() {
       // These rows draw a marker, a plan or a page in place of the message row, so they have no steps row.
       if (markerOnlyMessage(message) || message.kind === "thinking" || message.kind === "plan") continue;
       if (chatVisualReply(message) !== null) continue;
+      // A quiet routine run had nothing to report, and the host removed its thinking.
+      if (message.itemType === ROUTINE_QUIET_ANSWER_ITEM_TYPE) continue;
       answers.set(message.turnId, message.id);
     }
     return answers;
