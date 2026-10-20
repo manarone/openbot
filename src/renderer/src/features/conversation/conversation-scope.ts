@@ -307,8 +307,16 @@ export function createConversationViewScope(props: ConversationProps) {
     props,
     activeDeliveries,
     agentActivityLabels: resources.agentActivityLabels,
+    turnStepLog: resources.turnStepLog,
   });
-  const { renderedAgentActivity, agentActivitySpaceReserved, setAgentActivitySpaceReserved, agentActivity } = activity;
+  const {
+    renderedAgentActivity,
+    agentActivitySpaceReserved,
+    setAgentActivitySpaceReserved,
+    agentActivity,
+    activeSteps,
+    stepsOfTurn,
+  } = activity;
   const browser = createBrowserStore({
     props,
     browserOpenRequests: resources.browserOpenRequests,
@@ -1466,6 +1474,8 @@ export function createConversationViewScope(props: ConversationProps) {
     stopBrowserTab,
     removeAttachment,
     renderedAgentActivity,
+    activeSteps,
+    stepsOfTurn,
     reorderPresentedQueue,
     replyTarget,
     replyToMessage,

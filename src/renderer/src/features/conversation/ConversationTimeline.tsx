@@ -4,6 +4,7 @@ import type { ConversationUiBlock } from "@openbot/contracts/ui-blocks";
 import { Button } from "@openbot/ui";
 import type { AgentMessage, ChatActionMarkerModel } from "@openbot/ui/data";
 import { AgentActivityIndicator } from "@openbot/ui/features/conversation/AgentActivity";
+import { AgentStepsDisclosure } from "@openbot/ui/features/conversation/AgentSteps";
 import { AgentTaskChips } from "@openbot/ui/features/conversation/AgentTasks";
 import { AttachmentCards } from "@openbot/ui/features/conversation/AttachmentCards";
 import { UsageLimitAskCard } from "@openbot/ui/features/conversation/BackupModels";
@@ -24,6 +25,7 @@ import { UnreadMessagesBanner, UnreadMessagesDivider } from "@openbot/ui/feature
 import { teamMemberName } from "@openbot/ui/features/team/TeamPersonAvatar";
 import { useText } from "@openbot/ui/text";
 import { createMemo, createSignal, For, Loading, lazy, onCleanup, Show, untrack } from "solid-js";
+import { useAgentStepsExpanded } from "../../agent-steps-preference";
 import { planItems, planTitle } from "../../app-message-projection";
 import { deviceSendShortcut } from "../../send-shortcut-preference";
 import { groupedMessageIds } from "./agent-message-timeline";
@@ -131,6 +133,8 @@ export function ConversationTimeline() {
     props,
     reactToMessage,
     renderedAgentActivity,
+    activeSteps,
+    stepsOfTurn,
     replyJump,
     respondToBrowserTakeover,
     replyToMessage,
@@ -154,6 +158,29 @@ export function ConversationTimeline() {
     openTaskPanel,
   } = useConversationViewScope();
   const { t, format } = useText();
+  const agentStepsExpanded = useAgentStepsExpanded();
+  /*
+   * The finished turns whose steps the user opened or closed, against the Settings default. It is
+   * kept here, not in the row, so a row that scrolls out of the virtual list and back keeps it.
+   */
+  const [toggledStepTurns, setToggledStepTurns] = createSignal<ReadonlySet<string>>(new Set());
+  const stepsOpen = (turnId: string) => toggledStepTurns().has(turnId) !== agentStepsExpanded();
+  const toggleSteps = (turnId: string) =>
+    setToggledStepTurns((current) => {
+      const next = new Set(current);
+      if (!next.delete(turnId)) next.add(turnId);
+      return next;
+    });
+  /** The first answer row of each turn, which shows the steps of a finished turn above it. */
+  const firstAnswerByTurn = createMemo(() => {
+    const answers = new Map<string, string>();
+    for (const message of timelineMessages()) {
+      if (message.author !== "agent" || !message.turnId || answers.has(message.turnId)) continue;
+      if (message.kind === "thinking" || message.kind === "plan" || chatVisualReply(message) !== null) continue;
+      answers.set(message.turnId, message.id);
+    }
+    return answers;
+  });
   const openTasks = () => props.tasks?.snapshot?.tasks.filter((task) => task.state !== "closed") ?? [];
   const compaction = (): ContextCompactionView | null => {
     const state = props.contextState;
@@ -666,6 +693,16 @@ export function ConversationTimeline() {
                     </div>
                   );
                 }
+                // The steps of a finished turn, above its first answer. A running turn shows them on its activity line.
+                const finishedTurnSteps = createMemo(() => {
+                  const current = message();
+                  const turnId = current?.turnId;
+                  if (!turnId || turnId === props.activeTurnId || firstAnswerByTurn().get(turnId) !== current.id) {
+                    return null;
+                  }
+                  const steps = stepsOfTurn(turnId);
+                  return steps.length > 0 ? { turnId, steps } : null;
+                });
                 const displayedReactions = createMemo(() => {
                   const currentMessage = message();
                   if (currentMessage?.reactions?.length) return currentMessage.reactions;
@@ -706,6 +743,15 @@ export function ConversationTimeline() {
                           scheduleUnreadDividerVisibilityUpdate();
                         }}
                       />
+                    </Show>
+                    <Show when={finishedTurnSteps()}>
+                      {(steps) => (
+                        <AgentStepsDisclosure
+                          steps={steps().steps}
+                          open={stepsOpen(steps().turnId)}
+                          onToggle={() => toggleSteps(steps().turnId)}
+                        />
+                      )}
                     </Show>
                     <ChatRowBoundary>
                       <Show
@@ -855,6 +901,8 @@ export function ConversationTimeline() {
                   label={activity().label}
                   phase={activity().phase}
                   since={activity().since}
+                  steps={activeSteps()}
+                  defaultExpanded={agentStepsExpanded()}
                 />
               )}
             </Show>

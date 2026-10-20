@@ -100,6 +100,13 @@ export function SettingsGeneralTab(props: SettingsGeneralTabProps) {
             label={i18n.t("settings.busyMessage.title")}
             description={i18n.t("settings.busyMessage.description")}
           />
+          <SwitchField
+            data-settings-row="settings.agentSteps.title"
+            checked={props.value.agentStepsExpanded}
+            onChange={(checked) => props.onUpdateSetting("agentStepsExpanded", checked)}
+            label={i18n.t("settings.agentSteps.title")}
+            description={i18n.t("settings.agentSteps.description")}
+          />
           <Item data-settings-row="settings.agentMemoryLimit.title" class="settings-modal-row">
             <ItemContent>
               <ItemTitle>{i18n.t("settings.agentMemoryLimit.title")}</ItemTitle>

@@ -1,8 +1,10 @@
 import type { AppTextKey } from "@openbot/i18n";
-import { createEffect, createMemo, createSignal, Show } from "solid-js";
+import { Button, ChevronDown } from "@openbot/ui";
+import { createEffect, createMemo, createSignal, createUniqueId, Show, untrack } from "solid-js";
 import type { AgentProfile } from "../../data";
 import { useText } from "../../text";
 import { AgentAvatar } from "../agents/AgentAvatar";
+import { type AgentStep, AgentStepList } from "./AgentSteps";
 
 /**
  * The English source of each label. A label is an identifier here: render it with
@@ -75,8 +77,15 @@ export function AgentActivityIndicator(props: {
    * so a working agent reads differently from a stalled one.
    */
   since?: number;
+  /** The steps of the turn so far. With one or more, the line opens and closes a list of them. */
+  steps?: readonly AgentStep[];
+  /** The list starts open when this is true. */
+  defaultExpanded?: boolean;
 }) {
   const { t, format } = useText();
+  const stepsId = createUniqueId();
+  const [expanded, setExpanded] = createSignal(untrack(() => props.defaultExpanded === true));
+  const steps = () => props.steps ?? [];
   const label = () => props.detail ?? t(agentActivityLabelKey(props.label));
   const elapsedMs = createElapsed(() => (props.phase === "exiting" ? undefined : props.since));
   const elapsed = createMemo(() => {
@@ -100,11 +109,30 @@ export function AgentActivityIndicator(props: {
           label: label(),
         })}
       />
-      <section class="agent-activity-content" aria-label={t("chat.activity.current")}>
-        <AgentAvatar agent={props.agent} mood="working" class="agent-activity-avatar" />
-        <span class="agent-activity-label">{label()}</span>
-        <Show when={elapsed()}>{(time) => <span class="agent-activity-elapsed">{time()}</span>}</Show>
-      </section>
+      <div class="agent-activity-body">
+        <section class="agent-activity-content" aria-label={t("chat.activity.current")}>
+          <AgentAvatar agent={props.agent} mood="working" class="agent-activity-avatar" />
+          <Show when={steps().length > 0} fallback={<span class="agent-activity-label">{label()}</span>}>
+            <Button
+              variant="ghost"
+              type="button"
+              class="agent-activity-toggle"
+              aria-expanded={expanded() ? "true" : "false"}
+              aria-controls={expanded() ? stepsId : undefined}
+              data-cuelume-tap={expanded() ? "close" : "open"}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              <span class="agent-activity-label">{label()}</span>
+              <span class="sr-only">{t(expanded() ? "chat.steps.hide" : "chat.steps.show")}</span>
+              <ChevronDown class="agent-activity-chevron" aria-hidden="true" />
+            </Button>
+          </Show>
+          <Show when={elapsed()}>{(time) => <span class="agent-activity-elapsed">{time()}</span>}</Show>
+        </section>
+        <Show when={expanded() && steps().length > 0}>
+          <AgentStepList id={stepsId} steps={steps()} />
+        </Show>
+      </div>
     </div>
   );
 }

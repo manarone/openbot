@@ -84,6 +84,7 @@
     "./features/connectors/connector-catalog": "./src/features/connectors/connector-catalog.tsx",
     "./features/connectors/connectors": "./src/features/connectors/connectors.ts",
     "./features/conversation/AgentActivity": "./src/features/conversation/AgentActivity.tsx",
+    "./features/conversation/AgentSteps": "./src/features/conversation/AgentSteps.tsx",
     "./features/conversation/AgentTasks": "./src/features/conversation/AgentTasks.tsx",
     "./features/conversation/BrowserSecretCard": "./src/features/conversation/BrowserSecretCard.tsx",
     "./features/conversation/BrowserTakeoverPreview": "./src/features/conversation/BrowserTakeoverPreview.tsx",

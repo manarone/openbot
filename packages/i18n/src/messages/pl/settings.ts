@@ -41,6 +41,9 @@ export const messages = {
   "settings.busyMessage.title": "Kieruj agentami podczas pracy",
   "settings.busyMessage.description":
     "Nowe wiadomości dołączają do bieżącej pracy agenta, a nie do kolejki. Działa z ChatGPT i Claude.",
+  "settings.agentSteps.title": "Pokazuj kroki agentów",
+  "settings.agentSteps.description":
+    "Domyślnie otwieraj myślenie i kroki narzędzi każdej tury agenta na tym urządzeniu i w tej przeglądarce.",
   "settings.agentMemoryLimit.title": "Wspomnienia na agenta",
   "settings.agentMemoryLimit.description": "Ile wspomnień może przechowywać każdy agent na tym komputerze.",
   "settings.keepRemoteSessions.title": "Szybkie połączenie z serwerami",

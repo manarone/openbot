@@ -1,4 +1,4 @@
-import type { AgentProfile } from "@openbot/ui/data";
+import type { AgentMessage, AgentProfile } from "@openbot/ui/data";
 import { type AgentActivityLabel, nextAgentActivityLabel } from "@openbot/ui/features/conversation/AgentActivity";
 import {
   agentActivityExitDelay,
@@ -7,6 +7,7 @@ import {
 } from "@openbot/ui/features/conversation/activity-timing";
 import { currentText } from "@openbot/ui/text";
 import { createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
+import { type TurnStepLog, thinkingItemCount, turnSteps } from "../agent-steps";
 import type { ConversationProps } from "../conversation-types";
 
 export interface RenderedAgentActivity {
@@ -23,6 +24,7 @@ export interface ActivityStoreDeps {
   props: ConversationProps;
   activeDeliveries: () => Array<{ id: string }>;
   agentActivityLabels: Map<string, { activityId: string; label: AgentActivityLabel }>;
+  turnStepLog: TurnStepLog;
 }
 
 export function createActivityStore(deps: ActivityStoreDeps) {
@@ -83,6 +85,44 @@ export function createActivityStore(deps: ActivityStoreDeps) {
     // The agent's own commentary is shown as it is; the host's progress text is in the host's source
     // English and is read here in the user's language.
     return latestActiveCommentary() ?? (progress ? currentText().sourceText(progress) : null);
+  });
+  const thinkingByTurn = createMemo(() => {
+    const thinking = new Map<string, AgentMessage>();
+    for (const message of deps.props.messages) {
+      if (message.kind === "thinking" && message.turnId) thinking.set(message.turnId, message);
+    }
+    return thinking;
+  });
+  // Each progress line of the running turn is kept as a step, in its place among the thinking
+  // items that came before it. A new thinking item alone does not record the line again.
+  createEffect(
+    () => {
+      const turnId = deps.props.activeTurnId;
+      const progress = deps.props.activityDetail?.trim();
+      const afterThinking = untrack(() => (turnId ? thinkingItemCount(thinkingByTurn().get(turnId)) : 0));
+      return { turnId, progress, afterThinking };
+    },
+    ({ turnId, progress, afterThinking }) => {
+      if (turnId && progress) deps.turnStepLog.record(turnId, progress, afterThinking);
+    },
+  );
+  /** The steps of a turn. The host's progress lines are in its source English and read here in the user's language. */
+  const stepsOfTurn = (turnId: string) =>
+    turnSteps(turnId, thinkingByTurn().get(turnId), deps.turnStepLog.steps(turnId), (text) =>
+      currentText().sourceText(text),
+    );
+  // The line keeps the steps of its turn while it leaves, so an open list does not empty first.
+  const [stepsTurnId, setStepsTurnId] = createSignal<string | null>(null);
+  createEffect(
+    () => ({ turnId: deps.props.activeTurnId, shown: renderedAgentActivity() !== null }),
+    ({ turnId, shown }) => {
+      if (turnId) setStepsTurnId(turnId);
+      else if (!shown) setStepsTurnId(null);
+    },
+  );
+  const activeSteps = createMemo(() => {
+    const turnId = stepsTurnId();
+    return turnId ? stepsOfTurn(turnId) : [];
   });
   const agentActivity = createMemo<"Working" | null>(() => (activeActivityId() ? "Working" : null));
   const activityLabel = createMemo<AgentActivityLabel | null>(() => {
@@ -204,5 +244,7 @@ export function createActivityStore(deps: ActivityStoreDeps) {
     activeActivityDetail,
     agentActivity,
     activityLabel,
+    activeSteps,
+    stepsOfTurn,
   };
 }

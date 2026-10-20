@@ -10,6 +10,7 @@ import type { AgentActivityLabel } from "@openbot/ui/features/conversation/Agent
 import { currentText } from "@openbot/ui/text";
 import type { UserErrorDetails } from "@openbot/user-errors";
 import { createEffect, createSignal, createStore, onCleanup } from "solid-js";
+import { createTurnStepLog, type TurnStepLog } from "./agent-steps";
 import type { ChatSearchMatch } from "./chat-search";
 import {
   appendPluginPrompt,
@@ -49,6 +50,7 @@ function readBrowserPipBounds(): BrowserBounds | null {
 
 interface ConversationResources {
   agentActivityLabels: Map<string, { activityId: string; label: AgentActivityLabel }>;
+  turnStepLog: TurnStepLog;
   browserOpenRequests: Map<
     string,
     {
@@ -222,6 +224,7 @@ export function createStableConversationState(
   const [browserPanelWidth, setBrowserPanelWidth] = createSignal(BROWSER_PANEL_DEFAULT);
   const resources: ConversationResources = {
     agentActivityLabels: new Map(),
+    turnStepLog: createTurnStepLog(),
     browserOpenRequests: new Map(),
     importTargetAgents: new Map<string, { agentId: string; serverId: string }>(),
     seenMessageIds: new Set<string>(),

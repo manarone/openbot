@@ -41,6 +41,9 @@ export const messages = {
   "settings.busyMessage.title": "Indirizza gli agenti mentre lavorano",
   "settings.busyMessage.description":
     "I nuovi messaggi si uniscono al lavoro in corso dell'agente, non alla coda. Funziona con ChatGPT e Claude.",
+  "settings.agentSteps.title": "Mostra i passaggi degli agenti",
+  "settings.agentSteps.description":
+    "Apri per impostazione predefinita il ragionamento e i passaggi degli strumenti di ogni turno di un agente su questo dispositivo e browser.",
   "settings.agentMemoryLimit.title": "Memorie per agente",
   "settings.agentMemoryLimit.description": "Quante memorie può conservare ogni agente su questo computer.",
   "settings.keepRemoteSessions.title": "Connessione rapida ai server",

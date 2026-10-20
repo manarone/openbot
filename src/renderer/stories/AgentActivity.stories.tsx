@@ -1,4 +1,5 @@
 import { AgentActivityIndicator } from "@openbot/ui/features/conversation/AgentActivity";
+import { type AgentStep, AgentStepsDisclosure } from "@openbot/ui/features/conversation/AgentSteps";
 import { createSignal, onSettled } from "solid-js";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { STORY_AGENTS } from "./fixtures";
@@ -33,6 +34,45 @@ export const LongStep: IndicatorStory = {
     label: "Working on it…",
     detail: "Deciding the next step in the app…",
     since: Date.now() - 42_000,
+  },
+};
+
+const STORY_STEPS: AgentStep[] = [
+  { id: "thinking-1", kind: "thinking", text: "The user wants the release notes. I will read the changelog first." },
+  { id: "tool-1", kind: "tool", text: "Gathering the relevant information…" },
+  { id: "tool-2", kind: "tool", text: "Reviewing the information I gathered…" },
+  { id: "thinking-2", kind: "thinking", text: "Three entries are new since the last tag. I will group them by area." },
+  { id: "tool-3", kind: "tool", text: "Making the requested changes…" },
+];
+
+/** A turn with steps: the line has a chevron that opens the thinking and tool steps so far. */
+export const WithSteps: IndicatorStory = {
+  args: {
+    agent: STORY_AGENTS[0],
+    label: "Putting the answer together…",
+    steps: STORY_STEPS,
+  },
+};
+
+/** The steps open from the start, as with "Show agent steps" on in Settings. */
+export const WithStepsOpen: IndicatorStory = {
+  args: {
+    agent: STORY_AGENTS[0],
+    label: "Putting the answer together…",
+    steps: STORY_STEPS,
+    defaultExpanded: true,
+  },
+};
+
+/** The steps of a finished turn, as the row above its answer. */
+export const FinishedTurnSteps: IndicatorStory = {
+  args: {
+    agent: STORY_AGENTS[0],
+    label: "Putting the answer together…",
+  },
+  render: () => {
+    const [open, setOpen] = createSignal(false);
+    return <AgentStepsDisclosure steps={STORY_STEPS} open={open()} onToggle={() => setOpen((value) => !value)} />;
   },
 };
 

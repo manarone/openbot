@@ -498,6 +498,114 @@
   line-height: 20px;
 }
 
+/* The one grid row of the entry, so the line and its open steps collapse together on exit. */
+.agent-activity-body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The entry ignores the pointer so that it never covers the transcript; the toggle and the list
+ * take it back. The ghost button keeps the look of the plain line, with a chevron after it. */
+.agent-activity-content .agent-activity-toggle {
+  display: inline-flex;
+  min-width: 0;
+  height: auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--openbot-space-1);
+  margin-inline-start: calc(-1 * var(--openbot-space-1));
+  padding: 0 var(--openbot-space-1);
+  border-radius: var(--openbot-radius-sm);
+  background: transparent;
+  font-weight: var(--openbot-weight-regular);
+  text-align: left;
+  pointer-events: auto;
+}
+
+.agent-activity-chevron,
+.agent-steps-chevron {
+  width: var(--openbot-icon-sm);
+  height: var(--openbot-icon-sm);
+  flex: 0 0 auto;
+  color: var(--openbot-text-muted);
+  transition: transform var(--openbot-duration-fast) var(--openbot-ease-out);
+}
+
+[aria-expanded="true"] > .agent-activity-chevron,
+[aria-expanded="true"] > .agent-steps-chevron {
+  transform: rotate(180deg);
+}
+
+.agent-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--openbot-space-1-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  line-height: var(--openbot-leading-sm);
+}
+
+.agent-step {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--openbot-space-2);
+}
+
+.agent-step-mark {
+  display: inline-flex;
+  height: var(--openbot-leading-sm);
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.agent-step-mark svg {
+  width: var(--openbot-icon-xs);
+  height: var(--openbot-icon-xs);
+}
+
+.agent-step-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.agent-step[data-kind="thinking"] .agent-step-text {
+  color: var(--openbot-text-secondary);
+}
+
+/* The steps start under the text of the line, past the avatar. */
+.agent-activity-body .agent-step-list {
+  padding: 0 0 var(--openbot-space-2) calc(var(--openbot-space-2) * 2 + var(--openbot-space-8));
+  pointer-events: auto;
+}
+
+/* The steps of a finished turn, above its answer. */
+.agent-steps {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--openbot-space-1);
+  padding-block-end: var(--openbot-space-1);
+}
+
+.agent-steps .agent-steps-toggle {
+  height: auto;
+  gap: var(--openbot-space-1);
+  padding: var(--openbot-space-0-5) var(--openbot-space-1);
+  border-radius: var(--openbot-radius-sm);
+  background: transparent;
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  font-weight: var(--openbot-weight-regular);
+}
+
+.agent-steps .agent-step-list {
+  padding-inline-start: var(--openbot-space-1);
+}
+
 .chat-action-marker {
   width: min(var(--openbot-chat-marker-width), calc(100% - var(--openbot-space-6)));
   min-height: var(--openbot-chat-marker-height);

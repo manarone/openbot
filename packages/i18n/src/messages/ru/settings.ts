@@ -41,6 +41,9 @@ export const messages = {
   "settings.busyMessage.title": "Направлять агентов, пока они работают",
   "settings.busyMessage.description":
     "Новые сообщения присоединяются к текущей работе агента, а не встают в очередь. Работает с ChatGPT и Claude.",
+  "settings.agentSteps.title": "Показывать шаги агентов",
+  "settings.agentSteps.description":
+    "По умолчанию открывать размышления и шаги инструментов каждого хода агента на этом устройстве и в этом браузере.",
   "settings.agentMemoryLimit.title": "Записей памяти на агента",
   "settings.agentMemoryLimit.description": "Сколько записей памяти может хранить каждый агент на этом компьютере.",
   "settings.keepRemoteSessions.title": "Быстрое подключение к серверам",
