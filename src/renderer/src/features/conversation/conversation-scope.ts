@@ -1476,6 +1476,7 @@ export function createConversationViewScope(props: ConversationProps) {
     renderedAgentActivity,
     activeSteps,
     stepsOfTurn,
+    turnStepLog: resources.turnStepLog,
     reorderPresentedQueue,
     replyTarget,
     replyToMessage,

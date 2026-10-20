@@ -135,6 +135,7 @@ export function ConversationTimeline() {
     renderedAgentActivity,
     activeSteps,
     stepsOfTurn,
+    turnStepLog,
     replyJump,
     respondToBrowserTakeover,
     replyToMessage,
@@ -159,18 +160,8 @@ export function ConversationTimeline() {
   } = useConversationViewScope();
   const { t, format } = useText();
   const agentStepsExpanded = useAgentStepsExpanded();
-  /*
-   * The finished turns whose steps the user opened or closed, against the Settings default. It is
-   * kept here, not in the row, so a row that scrolls out of the virtual list and back keeps it.
-   */
-  const [toggledStepTurns, setToggledStepTurns] = createSignal<ReadonlySet<string>>(new Set());
-  const stepsOpen = (turnId: string) => toggledStepTurns().has(turnId) !== agentStepsExpanded();
-  const toggleSteps = (turnId: string) =>
-    setToggledStepTurns((current) => {
-      const next = new Set(current);
-      if (!next.delete(turnId)) next.add(turnId);
-      return next;
-    });
+  const stepsOpen = (turnId: string) => turnStepLog.openChoice(turnId) ?? agentStepsExpanded();
+  const toggleSteps = (turnId: string) => turnStepLog.chooseOpen(turnId, !stepsOpen(turnId));
   /** The first answer row of each turn, which shows the steps of a finished turn above it. */
   const firstAnswerByTurn = createMemo(() => {
     const answers = new Map<string, string>();

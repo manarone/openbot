@@ -21,9 +21,14 @@ const RECORDED_STEP_LIMIT = 200;
 /**
  * The progress lines of recent turns, for this page only. The host sends them as events and does
  * not store them, so a turn read again after a restart shows its thinking and no tool steps.
+ *
+ * It also keeps the finished turns whose steps the user opened or closed. Other turns follow the
+ * Settings default. The conversation view mounts again when the user comes back to the chat, so
+ * the choice is kept here and not in the view.
  */
 export function createTurnStepLog() {
   const [turns, setTurns] = createSignal<ReadonlyMap<string, readonly RecordedToolStep[]>>(new Map());
+  const [openChoices, setOpenChoices] = createSignal<ReadonlyMap<string, boolean>>(new Map());
   return {
     record(turnId: string, text: string, afterThinking: number): void {
       setTurns((current) => {
@@ -44,6 +49,22 @@ export function createTurnStepLog() {
     },
     steps(turnId: string): readonly RecordedToolStep[] {
       return turns().get(turnId) ?? [];
+    },
+    /** The user's choice for the steps of a finished turn, or undefined when the user made none. */
+    openChoice(turnId: string): boolean | undefined {
+      return openChoices().get(turnId);
+    },
+    chooseOpen(turnId: string, open: boolean): void {
+      setOpenChoices((current) => {
+        const next = new Map(current);
+        next.delete(turnId);
+        next.set(turnId, open);
+        for (const oldest of next.keys()) {
+          if (next.size <= RECORDED_TURN_LIMIT) break;
+          next.delete(oldest);
+        }
+        return next;
+      });
     },
   };
 }
