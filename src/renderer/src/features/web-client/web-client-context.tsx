@@ -41,6 +41,7 @@ import { currentText } from "@openbot/ui/text";
 import { errorReference, type UserErrorDetails } from "@openbot/user-errors";
 import { createEffect, createMemo, createSignal, createStore, onSettled } from "solid-js";
 import { toAgentProfile } from "../../app-message-projection";
+import { hostThinkingItemCount } from "../conversation/agent-steps";
 import { mergeConversationPage, missingReplyOriginals } from "../conversation/conversation-merge";
 import { followsServerUpdate } from "../servers/server-update-flow";
 import { createSidebarPreferences } from "../sidebar/sidebar-preferences";
@@ -184,6 +185,11 @@ export function createWebWorkspace(
   hooks: {
     /** A new agent status of the connected host, such as the end of a provider sign-in. */
     onStatus?: (status: AgentStatus) => void;
+    /**
+     * A progress line of a running turn, with the thinking items that the turn had when it came.
+     * It is called once for each event, for every agent.
+     */
+    onTurnProgress?: (turnId: string, detail: string, afterThinking: number) => void;
   } = {},
 ) {
   const [state, setState] = createStore<WebWorkspaceState>({
@@ -472,8 +478,14 @@ export function createWebWorkspace(
             draft.prompts = draft.prompts.filter((item) => String(item.requestId) !== String(event.requestId));
           });
         } else if (event.type === "turn-progress") {
+          const detail = cleanAgentMessageText(event.detail);
+          hooks.onTurnProgress?.(
+            event.turnId,
+            detail,
+            hostThinkingItemCount(state.conversations[event.agentId]?.page?.messages, event.turnId),
+          );
           setState((draft) => {
-            draft.progress[event.agentId] = { turnId: event.turnId, detail: cleanAgentMessageText(event.detail) };
+            draft.progress[event.agentId] = { turnId: event.turnId, detail };
           });
         } else if (event.type === "turn-started") {
           setState((draft) => {

@@ -7,7 +7,7 @@ import {
 } from "@openbot/ui/features/conversation/activity-timing";
 import { currentText } from "@openbot/ui/text";
 import { createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
-import { type TurnStepLog, thinkingItemCount, turnSteps } from "../agent-steps";
+import { type TurnStepLog, turnSteps } from "../agent-steps";
 import type { ConversationProps } from "../conversation-types";
 
 export interface RenderedAgentActivity {
@@ -93,19 +93,6 @@ export function createActivityStore(deps: ActivityStoreDeps) {
     }
     return thinking;
   });
-  // Each progress line of the running turn is kept as a step, in its place among the thinking
-  // items that came before it. A new thinking item alone does not record the line again.
-  createEffect(
-    () => {
-      const turnId = deps.props.activeTurnId;
-      const progress = deps.props.activityDetail?.trim();
-      const afterThinking = untrack(() => (turnId ? thinkingItemCount(thinkingByTurn().get(turnId)) : 0));
-      return { turnId, progress, afterThinking };
-    },
-    ({ turnId, progress, afterThinking }) => {
-      if (turnId && progress) deps.turnStepLog.record(turnId, progress, afterThinking);
-    },
-  );
   /** The steps of a turn. The host's progress lines are in its source English and read here in the user's language. */
   const stepsOfTurn = (turnId: string) =>
     turnSteps(turnId, thinkingByTurn().get(turnId), deps.turnStepLog.steps(turnId), (text) =>
@@ -245,6 +232,7 @@ export function createActivityStore(deps: ActivityStoreDeps) {
     agentActivity,
     activityLabel,
     activeSteps,
+    activeStepsTurnId: stepsTurnId,
     stepsOfTurn,
   };
 }

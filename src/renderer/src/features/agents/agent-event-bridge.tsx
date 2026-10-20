@@ -16,6 +16,7 @@ import { useAuth } from "../account/account-context";
 import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
 import { useBrowserTabs } from "../browser/browser-context";
 import { useChannels } from "../channels/channels-context";
+import { thinkingItemCount } from "../conversation/agent-steps";
 import { useConversation } from "../conversation/conversation-context";
 import { useConversationController } from "../conversation/conversation-controller-context";
 import { agentConversationKey, composerDraftKey, promptRequestKey } from "../conversation/conversation-keys";
@@ -50,7 +51,7 @@ export function AgentEventBridge() {
   const { applyAgentStatus, refreshAgentProviders } = useProviders();
   const { agentList, setModelOptions, explicitlyOpenedAgentChatId, applyStoredAgents, applyUserHiddenAgents } =
     useAgents();
-  const { setConversationErrors } = useConversationController();
+  const { setConversationErrors, resources: conversationResources } = useConversationController();
   const agentTasks = useAgentTasks();
   const {
     applyRuntimeMessages,
@@ -157,6 +158,11 @@ export function AgentEventBridge() {
         applyConversationDelta(event);
         return;
       case "turn-progress":
+        conversationResources.turnStepLog.record(
+          event.turnId,
+          cleanAgentMessageText(event.detail),
+          thinkingItemCount(conversations[event.agentId]?.messages, event.turnId),
+        );
         setTurnProgress((current) => ({
           ...current,
           [event.agentId]: { turnId: event.turnId, detail: cleanAgentMessageText(event.detail) },

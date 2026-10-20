@@ -274,6 +274,9 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
         () => undefined,
       );
     },
+    // Host events start after the connection, so the controller below exists by then.
+    onTurnProgress: (turnId, detail, afterThinking) =>
+      controller.resources.turnStepLog.record(turnId, detail, afterThinking),
   });
   const notifications = createWebServerNotifications(props.accountId);
   // A stored queue edit holds message text of the account that opened it. Another account must not restore it.

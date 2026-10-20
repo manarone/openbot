@@ -1,3 +1,4 @@
+import type { ConversationMessage } from "@openbot/contracts/ipc";
 import { markdownPreviewText } from "@openbot/contracts/markdown-preview-text";
 import type { AgentMessage } from "@openbot/ui/data";
 import type { AgentStep } from "@openbot/ui/features/conversation/AgentSteps";
@@ -20,9 +21,11 @@ const RECORDED_STEP_LIMIT = 200;
 
 /**
  * The progress lines of recent turns, for this page only. The host sends them as events and does
- * not store them, so a turn read again after a restart shows its thinking and no tool steps.
+ * not store them, so a turn read again after a restart shows its thinking and no tool steps. The
+ * event handler of the app records each event once, for every agent, so the steps of an agent
+ * that works while the user reads another chat are kept too.
  *
- * It also keeps the finished turns whose steps the user opened or closed. Other turns follow the
+ * It also keeps the turns whose steps the user opened or closed. Other turns follow the
  * Settings default. The conversation view mounts again when the user comes back to the chat, so
  * the choice is kept here and not in the view.
  */
@@ -33,9 +36,6 @@ export function createTurnStepLog() {
     record(turnId: string, text: string, afterThinking: number): void {
       setTurns((current) => {
         const steps = current.get(turnId) ?? [];
-        const last = steps.at(-1);
-        // A switch between chats gives the same line again. It is one step.
-        if (last?.text === text && last.afterThinking === afterThinking) return current;
         if (steps.length >= RECORDED_STEP_LIMIT) return current;
         const next = new Map(current);
         next.delete(turnId);
@@ -50,7 +50,7 @@ export function createTurnStepLog() {
     steps(turnId: string): readonly RecordedToolStep[] {
       return turns().get(turnId) ?? [];
     },
-    /** The user's choice for the steps of a finished turn, or undefined when the user made none. */
+    /** The user's choice for the steps of a turn, or undefined when the user made none. */
     openChoice(turnId: string): boolean | undefined {
       return openChoices().get(turnId);
     },
@@ -71,9 +71,21 @@ export function createTurnStepLog() {
 
 export type TurnStepLog = ReturnType<typeof createTurnStepLog>;
 
-/** The thinking items of a turn so far, empty ones included, so a recorded position stays valid. */
-export function thinkingItemCount(thinking: AgentMessage | undefined): number {
-  return thinking?.items?.length ?? 0;
+/**
+ * The thinking items of a turn so far in the chat rows, empty ones included, so a recorded
+ * position stays valid.
+ */
+export function thinkingItemCount(rows: readonly AgentMessage[] | undefined, turnId: string): number {
+  return rows?.find((row) => row.kind === "thinking" && row.turnId === turnId)?.items?.length ?? 0;
+}
+
+/** The same count from the host's messages: each commentary item of the turn is one thinking item. */
+export function hostThinkingItemCount(messages: readonly ConversationMessage[] | undefined, turnId: string): number {
+  return (
+    messages?.filter(
+      (message) => message.turnId === turnId && message.author === "assistant" && message.itemType === "commentary",
+    ).length ?? 0
+  );
 }
 
 /**

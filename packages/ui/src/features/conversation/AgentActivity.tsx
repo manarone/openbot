@@ -1,6 +1,6 @@
 import type { AppTextKey } from "@openbot/i18n";
 import { Button, ChevronDown } from "@openbot/ui";
-import { createEffect, createMemo, createSignal, createUniqueId, Show, untrack } from "solid-js";
+import { createEffect, createMemo, createSignal, createUniqueId, Show } from "solid-js";
 import type { AgentProfile } from "../../data";
 import { useText } from "../../text";
 import { AgentAvatar } from "../agents/AgentAvatar";
@@ -77,14 +77,17 @@ export function AgentActivityIndicator(props: {
    * so a working agent reads differently from a stalled one.
    */
   since?: number;
-  /** The steps of the turn so far. With one or more, the line opens and closes a list of them. */
+  /**
+   * The steps of the turn so far. With one or more, the line opens and closes a list of them. The
+   * caller keeps whether the list is open, for each turn.
+   */
   steps?: readonly AgentStep[];
-  /** The list starts open when this is true. */
-  defaultExpanded?: boolean;
+  stepsOpen?: boolean;
+  onToggleSteps?: () => void;
 }) {
   const { t, format } = useText();
   const stepsId = createUniqueId();
-  const [expanded, setExpanded] = createSignal(untrack(() => props.defaultExpanded === true));
+  const expanded = () => props.stepsOpen === true;
   const steps = () => props.steps ?? [];
   const label = () => props.detail ?? t(agentActivityLabelKey(props.label));
   const elapsedMs = createElapsed(() => (props.phase === "exiting" ? undefined : props.since));
@@ -120,7 +123,7 @@ export function AgentActivityIndicator(props: {
               aria-expanded={expanded() ? "true" : "false"}
               aria-controls={expanded() ? stepsId : undefined}
               data-cuelume-tap={expanded() ? "close" : "open"}
-              onClick={() => setExpanded((value) => !value)}
+              onClick={() => props.onToggleSteps?.()}
             >
               <span class="agent-activity-label">{label()}</span>
               <span class="sr-only">{t(expanded() ? "chat.steps.hide" : "chat.steps.show")}</span>

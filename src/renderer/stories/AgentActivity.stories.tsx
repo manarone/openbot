@@ -52,6 +52,10 @@ export const WithSteps: IndicatorStory = {
     label: "Putting the answer together…",
     steps: STORY_STEPS,
   },
+  render: (args) => {
+    const [open, setOpen] = createSignal(false);
+    return <AgentActivityIndicator {...args} stepsOpen={open()} onToggleSteps={() => setOpen((value) => !value)} />;
+  },
 };
 
 /** The steps open from the start, as with "Show agent steps" on in Settings. */
@@ -60,7 +64,7 @@ export const WithStepsOpen: IndicatorStory = {
     agent: STORY_AGENTS[0],
     label: "Putting the answer together…",
     steps: STORY_STEPS,
-    defaultExpanded: true,
+    stepsOpen: true,
   },
 };
 

@@ -134,6 +134,7 @@ export function ConversationTimeline() {
     reactToMessage,
     renderedAgentActivity,
     activeSteps,
+    activeStepsTurnId,
     stepsOfTurn,
     turnStepLog,
     replyJump,
@@ -162,12 +163,20 @@ export function ConversationTimeline() {
   const agentStepsExpanded = useAgentStepsExpanded();
   const stepsOpen = (turnId: string) => turnStepLog.openChoice(turnId) ?? agentStepsExpanded();
   const toggleSteps = (turnId: string) => turnStepLog.chooseOpen(turnId, !stepsOpen(turnId));
+  // The activity line and the finished turn share the choice, so a list opened while the agent
+  // works stays open above its answer.
+  const liveStepsOpen = () => {
+    const turnId = activeStepsTurnId();
+    return turnId ? stepsOpen(turnId) : false;
+  };
   /** The first answer row of each turn, which shows the steps of a finished turn above it. */
   const firstAnswerByTurn = createMemo(() => {
     const answers = new Map<string, string>();
     for (const message of timelineMessages()) {
       if (message.author !== "agent" || !message.turnId || answers.has(message.turnId)) continue;
-      if (message.kind === "thinking" || message.kind === "plan" || chatVisualReply(message) !== null) continue;
+      // These rows draw a marker, a plan or a page in place of the message row, so they have no steps row.
+      if (markerOnlyMessage(message) || message.kind === "thinking" || message.kind === "plan") continue;
+      if (chatVisualReply(message) !== null) continue;
       answers.set(message.turnId, message.id);
     }
     return answers;
@@ -893,7 +902,11 @@ export function ConversationTimeline() {
                   phase={activity().phase}
                   since={activity().since}
                   steps={activeSteps()}
-                  defaultExpanded={agentStepsExpanded()}
+                  stepsOpen={liveStepsOpen()}
+                  onToggleSteps={() => {
+                    const turnId = activeStepsTurnId();
+                    if (turnId) toggleSteps(turnId);
+                  }}
                 />
               )}
             </Show>
