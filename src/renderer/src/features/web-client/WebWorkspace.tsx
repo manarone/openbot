@@ -277,9 +277,9 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
     },
     // A page read places the thinking that the host sent no event for. Reads start after the
     // connection, so the controller below exists by then.
-    onConversationRead: () => {
-      const readStart = controller.resources.turnStepLog.mark();
-      return (page) => recordTurnStepPage(controller.resources.turnStepLog, page, readStart);
+    onConversationRead: (older) => {
+      const read = { start: controller.resources.turnStepLog.mark(), older };
+      return (page) => recordTurnStepPage(controller.resources.turnStepLog, page, read);
     },
   });
   const notifications = createWebServerNotifications(props.accountId);

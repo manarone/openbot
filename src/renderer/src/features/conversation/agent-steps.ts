@@ -102,13 +102,15 @@ export function createTurnStepLog() {
     /**
      * Keeps the place of the messages of a page read, as the comment of `createTurnStepLog` says.
      * `turnIds` are the turns that the page shows. `readStart` is the result of `mark()` when the
-     * read started, where the caller knows it.
+     * read started, where the caller knows it. A page of older history does not `observe` its
+     * turns: their newest messages can be after it.
      */
     recordPage(
       turnIds: ReadonlySet<string>,
       messages: ReadonlyArray<{ turnId: string; messageId: string }>,
       runningTurnId: string | null,
       readStart?: number,
+      observes = true,
     ): void {
       const now = readStart ?? ++recorded;
       setTurns((current) => {
@@ -130,8 +132,9 @@ export function createTurnStepLog() {
                 messageId: message.messageId,
               }),
             );
-          const observed = Math.max(turn.observed ?? Number.NEGATIVE_INFINITY, now);
-          next = withNewestTurn(next, turnId, { events: withEvents(turn.events, added), observed });
+          const events = withEvents(turn.events, added);
+          const observed = observes ? Math.max(turn.observed ?? Number.NEGATIVE_INFINITY, now) : turn.observed;
+          next = withNewestTurn(next, turnId, observed === undefined ? { events } : { events, observed });
         }
         return next;
       });
@@ -168,21 +171,25 @@ function recordRunningCommentary(
 }
 
 /**
- * Keeps the place of the commentary messages in a page that the client read. `readStart` is
- * `log.mark()` from when the read started, where the caller knows it.
+ * Keeps the place of the commentary messages in a page that the client read. `read` is where the
+ * caller knows it: `log.mark()` from when the read started, and whether it read older history. A
+ * page shows the turns that it has messages of. The latest page also shows the running turn with
+ * none yet; an older page does not, because the turn's newest messages are not in it.
  */
 export function recordTurnStepPage(
   log: TurnStepLog,
   page: { activeTurnId: string | null; messages: readonly ConversationMessage[] },
-  readStart?: number,
+  read?: { start: number; older: boolean },
 ): void {
   const turnIds = new Set(page.messages.flatMap((message) => (message.turnId ? [message.turnId] : [])));
-  if (page.activeTurnId) turnIds.add(page.activeTurnId);
+  const latest = read?.older !== true;
+  if (latest && page.activeTurnId) turnIds.add(page.activeTurnId);
   log.recordPage(
     turnIds,
     page.messages.filter(isCommentary).map((message) => ({ turnId: message.turnId, messageId: message.id })),
-    page.activeTurnId,
-    readStart,
+    latest ? page.activeTurnId : null,
+    read?.start,
+    latest,
   );
 }
 
