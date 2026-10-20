@@ -560,9 +560,16 @@ const Conversation = createSimpleContext({
             mode: windowMode,
           }),
         );
-        const next = mappedMessages.map((mapped) => {
-          const existing = previousById.get(mapped.id);
-          if (!existing) return createStoredMessage({ ...mapped, animate: !initialLoad });
+        // A snapshot holds the latest messages of the host's cache, so it can hold part of a long
+        // turn's thinking. The loaded items of that turn stay, as they do for a page. The host removes
+        // thinking only from a quiet routine run, whose answer has no row, so no steps show for it.
+        const next = mappedMessages.map((snapshotMessage) => {
+          const existing = previousById.get(snapshotMessage.id);
+          if (!existing) return createStoredMessage({ ...snapshotMessage, animate: !initialLoad });
+          const mapped =
+            snapshotMessage.kind === "thinking" && existing.kind === "thinking"
+              ? { ...snapshotMessage, ...mergeThinkingItems(existing, snapshotMessage, "latest") }
+              : snapshotMessage;
           if (!agentMessagesEqual(existing, mapped)) updateStored(existing, mapped);
           return existing;
         });
